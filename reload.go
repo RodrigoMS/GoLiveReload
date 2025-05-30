@@ -34,7 +34,8 @@ func verificarAlteracoes(caminho string) {
 
 func recompilarEExecutar() {
 	fmt.Println("Recompilando aplicação...")
-	cmdBuild := exec.Command("go", "build", "-o", "app", "APP/main.go")
+	cmdBuild := exec.Command("go", "build", "-o", "../app")
+	cmdBuild.Dir = "APP"
 	output, err := cmdBuild.CombinedOutput()
 	if err != nil {
 		fmt.Printf("Erro ao recompilar: %v\nSaída:\n%s\n", err, output)
@@ -64,6 +65,7 @@ func recompilarEExecutar() {
 		fmt.Println("Aplicação iniciada com sucesso!")
 	}
 }
+
 
 func main() {
 	caminho := "APP/"
