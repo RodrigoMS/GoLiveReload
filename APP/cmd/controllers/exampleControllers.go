@@ -12,5 +12,5 @@ func StatusService(w http.ResponseWriter, r *http.Request) {
 }
 
 func HomePage(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Servidor em execução !!!")
+	fmt.Fprintf(w, "Servidor em execução!!!")
 }

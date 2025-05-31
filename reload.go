@@ -1,6 +1,3 @@
-//Executar o VS Code no Slax
-//code --no-sandbox --user-data-dir ~/vscode-root
-
 package main
 
 import (
@@ -11,68 +8,65 @@ import (
 	"time"
 )
 
-// Mapa para armazenar timestamps dos arquivos
-var arquivosModificados = make(map[string]time.Time)
-var processoAtual *exec.Cmd // Variável para armazenar o processo da aplicação
+var (
+	fileModTimes = make(map[string]time.Time)
+	currentProc  *exec.Cmd
+	appPath      = "APP/"
+	buildOutput  = "../app"
+)
 
-func verificarAlteracoes(caminho string) {
-	filepath.Walk(caminho, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
+func checkChanges() bool {
+	changed := false
+
+	filepath.Walk(appPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil || info.IsDir() {
+			return nil
 		}
-		if !info.IsDir() {
-			ultimaModificacao, existe := arquivosModificados[path]
-			if !existe || info.ModTime().After(ultimaModificacao) {
-				fmt.Println("Arquivo modificado:", path)
-				arquivosModificados[path] = info.ModTime()
-				recompilarEExecutar()
-			}
+
+		if lastMod, exists := fileModTimes[path]; !exists || info.ModTime().After(lastMod) {
+			fmt.Printf("Arquivo modificado: %s\n", path)
+			fileModTimes[path] = info.ModTime()
+			changed = true
 		}
 		return nil
 	})
+
+	return changed
 }
 
-func recompilarEExecutar() {
+func rebuildAndRun() {
 	fmt.Println("Recompilando aplicação...")
-	cmdBuild := exec.Command("go", "build", "-o", "../app")
-	cmdBuild.Dir = "APP"
-	output, err := cmdBuild.CombinedOutput()
-	if err != nil {
+	cmd := exec.Command("go", "build", "-o", buildOutput)
+	cmd.Dir = appPath
+	if output, err := cmd.CombinedOutput(); err != nil {
 		fmt.Printf("Erro ao recompilar: %v\nSaída:\n%s\n", err, output)
 		return
 	}
-	fmt.Println("Aplicação recompilada com sucesso!")
 
-	// Se houver um processo rodando, encerrá-lo antes de iniciar um novo
-	if processoAtual != nil {
+	if currentProc != nil {
 		fmt.Println("Encerrando aplicação anterior...")
-		err := processoAtual.Process.Kill() // Mata o processo anterior
-		if err != nil {
-			fmt.Printf("Erro ao encerrar aplicação: %v\n", err)
-		}
-		processoAtual = nil
+		_ = currentProc.Process.Kill()
 	}
 
 	fmt.Println("Iniciando nova aplicação...")
-	cmdRun := exec.Command("./app") // No Windows, use "app.exe"
-	cmdRun.Stdout = os.Stdout
-	cmdRun.Stderr = os.Stderr
-	err = cmdRun.Start()
-	if err != nil {
+	currentProc = exec.Command("./app")
+	currentProc.Stdout = os.Stdout
+	currentProc.Stderr = os.Stderr
+	
+	if err := currentProc.Start(); err != nil {
 		fmt.Printf("Erro ao iniciar aplicação: %v\n", err)
-	} else {
-		processoAtual = cmdRun
-		fmt.Println("Aplicação iniciada com sucesso!")
+		currentProc = nil
 	}
 }
 
-
 func main() {
-	caminho := "APP/"
-	fmt.Println("Observando alterações em:", caminho)
+	fmt.Printf("Observando alterações em: %s\n", appPath)
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
 
-	for {
-		verificarAlteracoes(caminho)
-		time.Sleep(2 * time.Second) // Ajuste o tempo conforme necessário
+	for range ticker.C {
+		if checkChanges() {
+			rebuildAndRun()
+		}
 	}
 }
