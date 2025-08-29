@@ -16,3 +16,9 @@ GoLiveReload é uma aplicação desenvolvida em Go para automatizar a observaç�
 - Ferramenta útil para projetos em fase de desenvolvimento.
 
 Com essa abordagem, desenvolvedores podem focar no código, enquanto **GoLiveReload** cuida da execução contínua! 🚀
+
+## Vídeo
+
+Para mais detalhes da implementação assinta o video no YouTube.
+
+[Criando um programa que recompila uma aplicação Go](https://www.youtube.com/watch?v=AR7mhb)

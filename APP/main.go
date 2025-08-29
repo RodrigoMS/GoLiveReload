@@ -1,7 +1,7 @@
 package main
 
-import "github.com/RodrigoMS/GoLiveReload/cmd"
+import "fmt"
 
 func main() {
-	server.Start()
+	fmt.Println("Go Live Reload")
 }
